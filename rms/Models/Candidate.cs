@@ -7,7 +7,6 @@
         public int[] jobsAppiledIds {  get; set; }
         public string[] jobAppiled {  get; set; }
         public string expressedIntrest { get; set; }
-        
         public int expeirence { get; set; }
     }
 
