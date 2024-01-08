@@ -1,8 +1,11 @@
 ﻿namespace rms.Controllers
 {
+    using global::rms.Interface;
     using global::rms.Models;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.Routing.Matching;
     using Microsoft.Extensions.Logging;
+   
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -20,7 +23,9 @@
                      skills = ["HTML", "CSS", "JavaScript"],
                      companyName = "Google",
                      id = 1,
-                     expirenceRequired = 2
+                     expirenceRequired = 2,
+                     description="",
+                     AppliedCandidateids=[1,3]
                  },
                  new Job
                  {
@@ -28,7 +33,9 @@
                      skills = ["Node.js", "Express", "MongoDB"],
                      companyName = "TCS",
                      id = 2,
-                     expirenceRequired = 3
+                     expirenceRequired = 3,
+                     description="",
+                     AppliedCandidateids=[2]
                  },
                   new Job
  {
@@ -36,83 +43,59 @@
      skills = ["C#", ".Net", "C++","DSA","OOPS"],
      companyName = "TCS",
      id = 3,
-     expirenceRequired = 2
+     description="",
+    AppliedCandidateids=[1,2]
  },
    
    };
+            private readonly IRepo _repo;
             private readonly ILogger<JobController> _logger;
 
-            public JobController(ILogger<JobController> logger)
+            public JobController(ILogger<JobController> logger,IRepo repo)
             {
                 _logger = logger;
+                _repo = repo;
             }
 
             [HttpGet(Name = "GetJobs")]
-            public IEnumerable<Job> Get()
+            public ActionResult<IEnumerable<Job>> GetJobs()
             {
-                return Jobs.Select(job => new Job
-                {
-                    id = job.id,
-                    title = job.title,
-                    description = job.description,
-                    companyName = job.companyName,
-                    skills= job.skills,
-                    expirenceRequired= job.expirenceRequired,
-                });
+               
+                return Ok(Jobs);
             }
 
+
             [HttpGet("{id}", Name = "GetJob")]
-            public ActionResult<Job> Get(int id)
+            public ActionResult<Job> GetJob(int id)
             {
+                _repo.GetSkills(id);
                 var job = Jobs.FirstOrDefault(j => j.id == id);
+
                 if (job == null)
                 {
                     return NotFound();
                 }
 
-                return new Job
-                {
-                    id = job.id,
-                    title = job.title,
-                    description = job.description,
-                    companyName = job.companyName,
-                    skills = job.skills,
-                    expirenceRequired = job.expirenceRequired,
-                };
+                return Ok(job);
             }
-
             [HttpPost(Name = "CreateJob")]
-            public IActionResult Post([FromBody] Job job)
+         
+            public ActionResult<Job> CreateJob(Job job)
             {
+                
                 job.id = Jobs.Count + 1;
-               // job.PostedDate = DateTime.Now;
+
                 Jobs.Add(job);
-                return CreatedAtRoute("GetJob", new { id = job.id }, job);
+
+                return CreatedAtAction(nameof(GetJob), new { id = job.id }, job);
             }
-
-            [HttpPut("{id}", Name = "UpdateJob")]
-            public IActionResult Put(int id, [FromBody] Job updatedJob)
+            [HttpGet("Candidates/{candidateId}", Name = "GetJobsByCandidates")]
+            public ActionResult<IEnumerable<Candidate>> GetJobsByCandidates(int candidateId)
             {
-                var existingJob = Jobs.FirstOrDefault(j => j.id == id);
-                if (existingJob == null)
-                {
-                    return NotFound();
-                }
 
-                existingJob.title = updatedJob.title;
-                existingJob.description = updatedJob.description;
+                var jobsAppliedbyCandidate = Jobs.Where(candidate => candidate.AppliedCandidateids.Contains(candidateId)).ToList();
 
-                return Ok(new Job
-                {
-                    id = existingJob.id,
-                    title = existingJob.title,
-                    description = existingJob.description,
-                  
-                    companyName = existingJob.companyName,
-                    skills = existingJob.skills,
-                    expirenceRequired = existingJob.expirenceRequired,
-                    // PostedDate = existingJob.PostedDate
-                });
+                return Ok(jobsAppliedbyCandidate);
             }
         }
 
