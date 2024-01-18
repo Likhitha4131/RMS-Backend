@@ -48,38 +48,33 @@
  },
    
    };
-            private readonly IRepo _repo;
+            private readonly IJobRepo _repo;
             private readonly ILogger<JobController> _logger;
-
-            public JobController(ILogger<JobController> logger,IRepo repo)
+            
+            public JobController(ILogger<JobController> logger,IJobRepo repo)
             {
                 _logger = logger;
                 _repo = repo;
             }
+            
 
             [HttpGet(Name = "GetJobs")]
-            public ActionResult<IEnumerable<Job>> GetJobs()
-            {
-               
-                return Ok(Jobs);
-            }
+            public async Task<ActionResult<List<Job>>> GetJobs()
+{
+    List<Job> jobs = await _repo.GetJobs();
+
+    return Ok(jobs);
+}
 
 
             [HttpGet("{id}", Name = "GetJob")]
-            public ActionResult<Job> GetJob(int id)
+            public async Task<ActionResult<Job>> GetJob(int id)
             {
-                _repo.GetSkills(id);
-                var job = Jobs.FirstOrDefault(j => j.id == id);
-
-                if (job == null)
-                {
-                    return NotFound();
-                }
-
+                Job job = await _repo.GetJobById(id);
                 return Ok(job);
             }
+
             [HttpPost(Name = "CreateJob")]
-         
             public ActionResult<Job> CreateJob(Job job)
             {
                 
@@ -90,7 +85,7 @@
                 return CreatedAtAction(nameof(GetJob), new { id = job.id }, job);
             }
             [HttpGet("Candidates/{candidateId}", Name = "GetJobsByCandidates")]
-            public ActionResult<IEnumerable<Candidate>> GetJobsByCandidates(int candidateId)
+            public ActionResult<IEnumerable<Candidate>> GetJobsCandidatesApplied(int candidateId)
             {
 
                 var jobsAppliedbyCandidate = Jobs.Where(candidate => candidate.AppliedCandidateids.Contains(candidateId)).ToList();
